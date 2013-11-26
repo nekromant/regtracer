@@ -1,0 +1,13 @@
+Dumb physical memory raper^W modification tracker. 
+Based on devmem2.c found on the internets.
+
+Usage:
+ 
+1. regtracer 0xPhysicalAddress
+2. Do something you want to know.
+3. Press CTRL+C
+...
+PROFIT
+
+(c) Necromant 2013 :: http://ncrmnt.org
+
