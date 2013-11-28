@@ -50,6 +50,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <signal.h>
+#include <stdint.h>
 
 
 #define FATAL do { fprintf(stderr, "Error at line %d, file %s (%d) [%s]\n", \
@@ -63,15 +64,31 @@
 unsigned long history[8192];
 int hpos = 0;
 off_t target;
-
+int detailed = 0;
 
 void handle_signal(int s)
 {
 	int i;
+	uint32_t prev = history[0];
 	printf("Logged %d value change events\n", hpos);
 	for (i=0; i<=hpos; i++)
 	{
 		printf("devmem 0x%X 32 0x%X\n", target, history[i]);
+	}
+	if (detailed) {
+		printf("--- detailed changes report ---\n");
+		for (i=1; i<=hpos; i++)
+		{
+			uint32_t tmp = prev ^ history[i];
+			while(tmp) {
+				int pos = ffs(tmp) - 1;
+				int change = (prev & (1 << pos));
+				printf("Bit %d changed from %s\n", 
+				       pos, change ? "1 to 0" : "0 to 1");
+				tmp &= ~(1<<pos);
+			}
+			prev = history[i];
+		}
 	}
 	exit(0);
 }
@@ -87,14 +104,16 @@ int main(int argc, char **argv) {
 	if(argc < 2) {
 		fprintf(stderr, "\nDumb physical memory tracer\n");
 		fprintf(stderr, "\n(c) Necromant 2013 :: ncrmnt.org \n");
-		fprintf(stderr, "\nUsage:\t%s { address }\n"
+		fprintf(stderr, "\nUsage:\t%s address [--detailed] \n"
 			"\taddress : memory address to rape\n",
 			argv[0]);
 		exit(1);
 	}
 
 	target = strtoul(argv[1], 0, 0);
-
+	if (argc > 2) 
+		detailed++;
+	
 	if((fd = open("/dev/mem", O_RDWR | O_SYNC)) == -1) FATAL;
 	printf("/dev/mem opened.\n"); 
 	fflush(stdout);
@@ -118,7 +137,7 @@ int main(int argc, char **argv) {
 		/* yes, 8192 changes will screw us up,
 		   but I wanted to keep loop contents as mininal as
 		   I could. So NO BOUNDS CHECKING HERE.
-		 */
+		*/
 	}
 
 	
