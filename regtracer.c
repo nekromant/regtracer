@@ -1,7 +1,8 @@
 /*
- * Dumb and ugly memory raper and history recorder. 
- * Based on: 
- * devmem2.c: Simple program to read/write from/to any location in memory.
+ *  Dumb and ugly memory raper with change history recorder. 
+ *  Copyright (C) 2013, Andrew 'Necromant' Andrianov <spam@ncrmnt.org>
+ *  Based on: 
+ *  devmem2.c: Simple program to read/write from/to any location in memory.
  *
  *  Copyright (C) 2000, Jan-Derk Bakker (J.D.Bakker@its.tudelft.nl)
  *
@@ -66,6 +67,8 @@ int hpos = 0;
 off_t target;
 int detailed = 0;
 
+void print_bitdiff(uint32_t a, uint32_t b);
+
 void handle_signal(int s)
 {
 	int i;
@@ -76,17 +79,9 @@ void handle_signal(int s)
 		printf("devmem 0x%X 32 0x%X\n", target, history[i]);
 	}
 	if (detailed) {
-		printf("--- detailed changes report ---\n");
 		for (i=1; i<=hpos; i++)
 		{
-			uint32_t tmp = prev ^ history[i];
-			while(tmp) {
-				int pos = ffs(tmp) - 1;
-				int change = (prev & (1 << pos));
-				printf("Bit %d changed from %s\n", 
-				       pos, change ? "1 to 0" : "0 to 1");
-				tmp &= ~(1<<pos);
-			}
+			print_bitdiff(prev, history[i]);
 			prev = history[i];
 		}
 	}
